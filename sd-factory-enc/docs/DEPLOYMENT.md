@@ -1,51 +1,48 @@
-# Deployment and test plan
+# Deployment and verification guide
 
-## 1. Neon
+## Neon
 
-The existing Neon project is `apk-compiler-storage`, in `aws-us-east-2`.
-Its production branch already has the private `apk-compiler-files` bucket.
-Apply `backend/schema.sql` to the production branch before deploying the API.
+Known resources: project `apk-compiler-storage`, region `aws-us-east-2`, production branch `br-raspy-feather-bd1qvar8`, private bucket `apk-compiler-files`. Apply `backend/schema.sql` to the intended branch.
 
-The Neon Functions control-plane API source is `backend/neon-function.ts`.
-A first function must be created through Neon CLI / `neon.ts` or a supported
-function-create operation, then deployed with the Neon Function deployment API.
-The connected tools exposed list/get/update/delete/deploy but not the initial
-create operation, so no function was created by this package build.
+`backend/neon-function.ts` is Fetch-compatible API source, not a deployed Neon Function. It requires `DATABASE_URL` and `SDE_API_KEY` plus a compatible runtime/deployment adapter and the `pg` dependency. It records an already-uploaded trusted storage key; signed upload, object-store access, worker dispatch and cloud MCP are not implemented.
 
-## 2. Worker
-
-Build the inspector image:
+## Local inspector
 
 ```sh
 cd worker
-docker build -t sd-factory-enc-worker .
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+python inspect_apk.py /absolute/path/to/sample.apk --json
 ```
 
-Run an inspection:
+Build the isolated worker:
 
 ```sh
-docker run --rm -v "$PWD/sample.apk:/input.apk:ro" sd-factory-enc-worker /input.apk
+docker build -t sd-factory-enc-worker:latest worker/
+docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges --memory 1g --cpus 2 --mount type=bind,src="/absolute/path/to/sample.apk",dst=/input.apk,readonly sd-factory-enc-worker:latest /input.apk --json
 ```
 
-Run workers in isolated compute with no host Docker socket, no privileged mode,
-read-only input mounts, per-job temp directories, strict CPU/memory/time limits,
-network disabled during APK inspection, and deletion of temp files after each job.
+## Local MCP
 
-## 3. Protection engine gate
+```sh
+cd plugin
+npm install
+node server.mjs
+```
 
-Do not enable `POST /v1/jobs/{id}/protect` until all checks pass:
+Configure from `plugin/mcp.json.template`. Docker must be available to the same user running the MCP server.
+
+## Protection engine release gate
+
+Do not enable protection until:
 1. DEX transformation and payload encryption produce deterministic artifacts.
-2. Generated loader code uses exactly `com.sdfactory.enc`.
-3. Selected Activities route through generated JNI bridges; unselected ones retain original implementations.
-4. `armeabi-v7a` and `arm64-v8a` .so files load on matching devices.
+2. Loader package is exactly `com.sdfactory.enc`.
+3. Selected Activities use generated JNI bridges; unselected Activities retain their original implementations.
+4. ARM32 (`armeabi-v7a`) and ARM64 (`arm64-v8a`) native runtimes load on matching devices.
 5. Rebuilt APK passes `apksigner verify --verbose --print-certs` and installs.
-6. Instrumented tests confirm selected Activity lifecycle and unselected Activity behavior.
-7. Tampering tests fail closed; no test claims perfect anti-dump protection.
+6. Instrumented tests verify selected and unselected Activity lifecycles.
+7. Tampering tests fail closed. Never claim perfect anti-dump protection.
 
-## 4. Test checklist
+## Test boundaries
 
-- Valid APK: SHA-256, package, SDK levels, Activity inventory and DEX/native-library inventory returned.
-- Invalid ZIP/APK: rejected with a nonzero exit and structured error.
-- Oversized APK: rejected at 512 MiB.
-- Activity selection: only requested names persisted; no wildcard expansion without explicit all-eligible selection.
-- Protect endpoint while engine absent: HTTP 503, explicit `PROTECTION_ENGINE_NOT_DEPLOYED`, no output APK.
+Unit tests cover manifest Activity name resolution, explicit exported values, legacy defaults, Android 12+ defaults and Activity aliases. APK inspection requires Androguard and a real APK. Docker build requires Docker and package access. MCP startup requires npm dependencies. Neon connectivity requires external deployment configuration. APK protection/rebuild/sign/install/launch are not implemented in this milestone.
