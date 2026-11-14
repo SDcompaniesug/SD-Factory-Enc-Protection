@@ -1,39 +1,20 @@
-# S.D Factory Enc — first test build
+# S.D Factory Enc — first-test source
 
-This is the source package for the first testable milestone of S.D Factory Enc.
-It includes a real APK inspection worker, an MCP interface, a Neon Functions API
-source package, a Postgres schema, and a Docker worker image definition.
+This source contains a read-only APK inspector, local stdio MCP server, Fetch-compatible API handler and Postgres schema.
 
-## Important status
+## Honest implementation status
 
-**This package does not yet claim to protect/repack APKs.** It implements APK
-intake/inspection and Activity inventory. The protect operation deliberately
-fails closed until the native DEX transformation + Android runtime loader engine
-has passed device tests. It will never return a fake “protected” APK.
+**APK protection is not implemented.** There is no DEX rewriting engine, encrypted DEX loader, JNI bridge generator, native runtime, APK rebuild/signing pipeline, object-upload endpoint or cloud worker dispatcher. The protect API fails closed and never returns a fabricated protected APK.
 
-The final protection implementation must add and test:
-- DEX extraction, transformation, and encrypted payload generation;
-- the exact loader package `com.sdfactory.enc`;
-- generated JNI-backed Activity bridges while preserving unselected Activities;
-- ARM32 (`armeabi-v7a`) and ARM64 (`arm64-v8a`) native runtimes;
-- integrity/signature checks and minimized plaintext exposure;
-- APK rebuild, signing, install, and launch tests on real devices.
+The exact future loader package is `com.sdfactory.enc` (no `.loader` suffix). The protection milestone must support `armeabi-v7a` and `arm64-v8a`, preserve unselected Activities, and pass real install/launch tests before it is enabled.
 
-Anti-debugging/anti-instrumentation checks are defensive hardening only. They do
-not make runtime code impossible to dump from a device controlled by an attacker.
+Anti-debugging and anti-instrumentation are defensive friction only; they cannot guarantee that runtime code is impossible to dump from an attacker-controlled device.
 
-## Layout
-- `backend/` — Neon Function HTTP API source and SQL schema.
-- `worker/` — Docker worker and APK inspection implementation.
-- `plugin/` — MCP server source and portable plugin metadata template.
-- `docs/` — deployment and test instructions.
+## Components
 
-## Current cloud resources discovered
-- Neon project: `apk-compiler-storage`
-- Region: `aws-us-east-2`
-- Production branch: `br-raspy-feather-bd1qvar8`
-- Existing private bucket: `apk-compiler-files`
+- `worker/`: Androguard read-only APK inventory and manifest Activity parser.
+- `plugin/`: local MCP server that invokes the worker in a constrained Docker container.
+- `backend/`: API handler source and Postgres schema; not deployed.
+- `docs/`: deployment and verification plan.
 
-No Neon Function existed on that branch when this package was prepared. The
-connected Neon tools did not expose the initial function-creation operation, so
-this source package is not represented as a live deployment.
+Run worker tests with `python -m unittest discover -s worker/tests -v`. APK inspection requires Androguard and a real APK. MCP startup requires Node dependencies and Docker. Neon requires deployment configuration outside this repository.
