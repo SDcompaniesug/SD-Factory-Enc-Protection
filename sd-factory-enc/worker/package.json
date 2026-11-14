@@ -1,0 +1,13 @@
+{
+  "name": "factory-enc-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node worker.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.900.0",
+    "pg": "^8.16.3"
+  }
+}

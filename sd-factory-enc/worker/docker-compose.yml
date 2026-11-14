@@ -1,0 +1,10 @@
+services:
+  factory-enc-worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - factory-enc-worker-data:/data
+    init: true
+volumes:
+  factory-enc-worker-data:

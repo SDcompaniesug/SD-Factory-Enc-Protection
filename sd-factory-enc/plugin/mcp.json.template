@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "sd-factory-enc": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/sd-factory-enc/plugin/server.mjs"],
+      "env": {
+        "SDE_WORKER_IMAGE": "sd-factory-enc-worker:latest"
+      }
+    }
+  }
+}

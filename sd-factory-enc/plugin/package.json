@@ -1,0 +1,11 @@
+{
+  "name": "sd-factory-enc-mcp",
+  "private": true,
+  "version": "0.1.1",
+  "type": "module",
+  "scripts": { "start": "node server.mjs" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.25.0"
+  }
+}
