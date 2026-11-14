@@ -1,0 +1,13 @@
+{
+  "name": "sd-factory-enc-api",
+  "private": true,
+  "version": "0.1.1",
+  "type": "module",
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "pg": "^8.13.1" },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.7.2"
+  }
+}
