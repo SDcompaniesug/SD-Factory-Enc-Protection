@@ -47,14 +47,17 @@ try {
     assert.equal(r.status, 401);
   });
 
+  const registrations = [];
   for (const user of users) {
     const r = await request('/api/auth/sign-up/email', {
       method: 'POST',
       body: { name: user.name, email: user.email, password }
     });
-    assert.ok(r.status === 200 || r.status === 201, 'registration failed: HTTP ' + r.status + ' ' + JSON.stringify(r.data));
+    registrations.push(r);
   }
-  await check('two independent accounts register successfully', async () => assert.equal(users.length, 2));
+  await check('two independent accounts register successfully', async () => {
+    for (const r of registrations) assert.ok(r.status === 200 || r.status === 201, 'registration failed: HTTP ' + r.status + ' ' + JSON.stringify(r.data));
+  });
 
   const loginA = await request('/api/auth/sign-in/email', { method: 'POST', body: { email: users[0].email, password } });
   const loginB = await request('/api/auth/sign-in/email', { method: 'POST', body: { email: users[1].email, password } });
