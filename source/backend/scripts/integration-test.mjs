@@ -115,6 +115,12 @@ try {
     assert.ok(r.status === 404 || r.status === 409, 'unexpected cross-user selection response: ' + r.status);
   });
 
+  await check('another user cannot invoke protection on the job (404)', async () => {
+    const r = await request('/api/v1/jobs/' + jobId + '/protect', { method: 'POST', token: tokenB, body: {} });
+    assert.equal(r.status, 404);
+    assert.equal(r.data?.error, 'not_found');
+  });
+
   await check('owner can save Activity selection', async () => {
     const r = await request('/api/v1/jobs/' + jobId + '/selection', {
       method: 'POST', token: tokenA, body: { activities: ['com.example.MainActivity'] }
